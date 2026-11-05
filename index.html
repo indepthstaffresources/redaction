@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDF Redaction | Indepth Accounting</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--deep-sage:#56776C;--sage:#94B6AB;--charcoal:#414042;--paper:#fff;--rule:#DCE4E1;--alert:#9A5B2E;--alertbg:#FBF3EC;--sage-tint:#F1F6F4;--desk:#E9F0ED;--muted:#7C8481;
+  --font:"Montserrat","Century Gothic",Arial,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font:400 14px/1.55 var(--font);color:var(--charcoal);background:var(--paper);display:flex;flex-direction:column;min-height:100vh}
+header{background:#56776C;color:#fff;display:flex;align-items:center;gap:20px;padding:14px 28px;flex:none}
+header img{height:30px;display:block}
+header h1{font-weight:500;font-size:16px;margin:0;padding-left:20px;border-left:1px solid rgba(255,255,255,.4)}
+header .back{margin-left:auto;color:#fff;text-decoration:none;font-size:13px;opacity:.85}
+header .back:hover{opacity:1;text-decoration:underline}
+.privacy{display:flex;align-items:center;gap:10px;background:var(--sage-tint);border-bottom:1px solid var(--rule);padding:9px 28px;font-size:13px;color:var(--deep-sage)}
+.privacy::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--sage);flex:none}
+main{display:grid;grid-template-columns:400px 1fr;flex:1;min-height:0}
+.pane{padding:26px 28px}
+.pane.controls{border-right:1px solid var(--rule);overflow-y:auto}
+.pane.view{background:var(--desk)}
+.intro{font-size:13.5px;color:var(--muted);margin:0 0 22px;max-width:46ch}
+h2{display:flex;align-items:center;gap:10px;font-size:14.5px;font-weight:500;color:var(--charcoal);margin:0 0 10px}
+h2 .n{width:24px;height:24px;border-radius:50%;background:var(--deep-sage);color:#fff;font-size:12px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex:none}
+h2.plain{font-size:13px;color:var(--muted);font-weight:500}
+.block{margin-bottom:26px;padding-bottom:22px;border-bottom:1px solid var(--rule)}
+.block:last-of-type{border-bottom:none}
+button{font:500 13.5px var(--font);padding:9px 18px;border:1px solid var(--deep-sage);background:var(--deep-sage);color:#fff;border-radius:3px;cursor:pointer}
+button:hover{filter:brightness(1.08)}
+button.ghost{background:transparent;color:var(--deep-sage)}
+button.ghost:hover{background:var(--sage-tint);filter:none}
+button.small{padding:6px 13px;font-size:12.5px}
+button.tiny{padding:1px 8px;font-size:11px;border-radius:2px}
+button:disabled{opacity:.4;cursor:not-allowed;filter:none}
+button:focus-visible,input:focus-visible,.drop:focus-visible{outline:2px solid var(--sage);outline-offset:2px}
+.drop{border:1.5px dashed var(--sage);border-radius:4px;background:var(--paper);padding:26px 18px;text-align:center;cursor:pointer;display:block;transition:background .15s}
+.drop.over,.drop:hover{background:var(--sage-tint)}
+.drop strong{display:block;font-size:15px;font-weight:500;color:var(--deep-sage);margin-bottom:3px;word-break:break-word}
+.drop span{font-size:12.5px;color:var(--muted)}
+input[type=file]{display:none}
+.toggles{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px}
+.toggles label,.moderow label{display:flex;gap:9px;align-items:flex-start;font-size:13.5px;cursor:pointer;padding:3px 0}
+input[type=checkbox],input[type=radio]{margin:3px 0 0;accent-color:var(--deep-sage);flex:none;width:15px;height:15px}
+.moderow{display:flex;flex-direction:column;gap:2px}
+.hint{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+input[type=text]{width:100%;padding:9px 11px;border:1px solid var(--rule);border-radius:3px;font:inherit;font-size:13.5px;color:inherit;background:var(--paper)}
+input[type=text]:focus{outline:2px solid var(--sage);outline-offset:-1px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.status{font-size:13px;color:var(--deep-sage);font-weight:500;min-height:20px;margin-top:10px}
+.status.bad{color:var(--alert)}
+.findings{border:1px solid var(--rule);border-radius:4px;background:var(--paper);max-height:340px;overflow-y:auto}
+.fgroup{border-bottom:1px solid var(--rule)}
+.fgroup:last-child{border-bottom:none}
+.fhead{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 12px;background:var(--sage-tint);font-size:12.5px;font-weight:600;color:var(--deep-sage);position:sticky;top:0;z-index:1}
+.fitem{display:flex;gap:10px;align-items:center;padding:7px 12px;border-top:1px solid #EEF2F0;font-size:13px;cursor:pointer}
+.fitem:hover{background:#FAFCFB}
+.fitem code{font:500 12.5px var(--font);font-variant-numeric:tabular-nums;background:#F3F6F5;padding:1px 7px;border-radius:3px;word-break:break-all}
+.pg{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.flag{margin-left:auto;font-size:11px;padding:1px 8px;border-radius:10px;white-space:nowrap}
+.flag.ok{background:#E3EDE9;color:var(--deep-sage)}
+.flag.maybe{background:var(--alertbg);color:var(--alert)}
+.pages{display:flex;flex-direction:column;gap:26px;align-items:center}
+.page{position:relative;box-shadow:0 2px 14px rgba(65,64,66,.14);background:#fff;max-width:100%;line-height:0}
+.page canvas{display:block;max-width:100%;height:auto;cursor:crosshair}
+.marquee{position:absolute;border:1.5px solid #000;background:rgba(0,0,0,.35);pointer-events:none}
+.plabel{font-size:12px;color:var(--muted);text-align:center;margin-bottom:6px;line-height:1.4}
+.plabel .rot{color:var(--alert)}
+.empty{border:1.5px dashed var(--rule);border-radius:4px;padding:40px 22px;text-align:center;color:var(--muted);font-size:13.5px;background:var(--paper)}
+.empty strong{display:block;color:var(--charcoal);font-size:14.5px;font-weight:500;margin-bottom:4px}
+.view .empty{max-width:520px;margin:60px auto 0;background:transparent;border-color:#C9D7D1}
+.warn{border-left:3px solid var(--alert);background:var(--alertbg);padding:11px 14px;font-size:12.5px;border-radius:0 3px 3px 0;margin-top:14px}
+.note{border-left:3px solid var(--sage);background:var(--sage-tint);padding:11px 14px;font-size:12.5px;border-radius:0 3px 3px 0;margin-top:14px}
+.warn strong,.note strong{font-weight:600}
+.viewhead{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:16px}
+.viewhead h2{margin:0}
+footer{border-top:1px solid var(--rule);padding:12px 28px;font-size:12px;color:var(--muted);background:var(--paper);flex:none}
+@media (min-width:901px){main{height:calc(100vh - 118px)}.pane.view{overflow-y:auto}}
+@media (max-width:900px){main{grid-template-columns:1fr}.pane.controls{border-right:none;border-bottom:1px solid var(--rule)}header{padding:12px 16px}.pane{padding:20px 16px}.toggles{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <img src="data:image/png;base64,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" alt="Indepth Accounting">
+  <h1>PDF Redaction</h1>
+  <a class="back" href="/">Staff tools</a>
+</header>
+<div class="privacy">Everything happens in this browser. The document is never uploaded or sent anywhere.</div>
+
+<main>
+  <section class="pane controls">
+    <p class="intro">Finds TFNs, ABNs, bank details and other identifiers, blacks them out, and rebuilds the PDF so the text underneath is destroyed, not just covered.</p>
+
+    <div class="block">
+      <h2><span class="n">1</span>Choose the PDF</h2>
+      <label class="drop" id="drop" tabindex="0" role="button">
+        <strong id="dropTitle">Choose a PDF</strong>
+        <span id="dropSub">or drag one here</span>
+        <input type="file" id="file" accept="application/pdf,.pdf">
+      </label>
+    </div>
+
+    <div class="block">
+      <h2><span class="n">2</span>What to look for</h2>
+      <div class="toggles" id="types"></div>
+      <label style="display:flex;gap:9px;align-items:flex-start;font-size:13.5px;margin-top:12px;cursor:pointer">
+        <input type="checkbox" id="loose">
+        <span>Also list anything that <em>looks</em> like an identifier
+          <span class="hint" style="display:block;margin:2px 0 0">Adds every long number and date for review. They're listed unticked, so nothing is blacked out until you tick it.</span></span>
+      </label>
+    </div>
+
+    <div class="block">
+      <h2><span class="n">3</span>Names and other words</h2>
+      <input type="text" id="custom" placeholder="Smith Family Trust, John Smith, 12 Ocean St">
+      <p class="hint">Separate each with a comma. Names and addresses can't be found automatically, so list them here.</p>
+    </div>
+
+    <div class="block">
+      <h2><span class="n">4</span>How to mark them</h2>
+      <div class="moderow" id="modes"></div>
+    </div>
+
+    <div class="block">
+      <div class="actions">
+        <button id="scan" disabled>Scan document</button>
+        <button id="reset" class="ghost">Start again</button>
+      </div>
+      <div class="status" id="status"></div>
+      <h2 class="plain" style="margin-top:18px">Found</h2>
+      <div id="results"><div class="empty" style="padding:22px"><strong>Nothing scanned yet</strong>Choose a PDF, then Scan document.</div></div>
+    </div>
+
+    <div class="block" id="exportBlock" hidden>
+      <h2><span class="n">5</span>Save</h2>
+      <label for="outName" class="hint" style="margin:0 0 5px;display:block">Save as</label>
+      <input type="text" id="outName" placeholder="filename">
+      <p class="hint">Starts as the original file name. Change it if you want the redacted copy named differently.</p>
+      <div class="actions" style="margin-top:12px">
+        <button id="savePdf">Download redacted PDF</button>
+        <button id="saveTxt" class="ghost small">Redaction log</button>
+      </div>
+      <div class="note"><strong>The saved PDF is made of images.</strong> That's what makes the redaction real: the original text no longer exists in the file. It won't be searchable, and it will be larger than the original.</div>
+      <div class="warn"><strong>Read it before you send it.</strong> The tool catches patterns. It will miss identifiers in unusual formats, can't read scanned pages with no text layer, and can't recognise names unless you list them. The person sending the document is responsible for checking it.</div>
+    </div>
+  </section>
+
+  <section class="pane view">
+    <div class="viewhead"><h2 class="plain">Preview</h2><p class="hint" id="manualHint" style="margin:0" hidden>Drag across a page to black out anything the scan missed. Right-click a box you added to remove it.</p></div>
+    <div id="preview"><div class="empty"><strong>No document loaded</strong>Pages appear here with the redactions marked, so you can check them before saving.</div></div>
+  </section>
+</main>
+
+<footer>Indepth Business Advisory &amp; Taxation. Internal use. Not a substitute for reviewing the document yourself.</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var $ = function(id){return document.getElementById(id);};
+  function say(t, bad){ $("status").textContent = t; $("status").className = "status" + (bad ? " bad" : ""); }
+
+  // ---- library check ----
+  if(!window.pdfjsLib || !window.jspdf){
+    say("The PDF libraries did not load. This tool needs an internet connection the first time it is opened, and access to cdnjs.cloudflare.com. Check with whoever manages your network.", true);
+    $("drop").style.opacity = ".4";
+    $("drop").style.pointerEvents = "none";
+    return;
+  }
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+  var TYPES = [
+    {id:"tfn",label:"Tax file numbers",on:true},
+    {id:"abn",label:"ABNs",on:true},
+    {id:"acn",label:"ACNs",on:true},
+    {id:"bank",label:"BSB and accounts",on:true},
+    {id:"ref",label:"Reference numbers",on:true},
+    {id:"card",label:"Card numbers",on:true},
+    {id:"medicare",label:"Medicare numbers",on:true},
+    {id:"super",label:"Super member numbers",on:true},
+    {id:"email",label:"Email addresses",on:true},
+    {id:"phone",label:"Phone numbers",on:true},
+    {id:"dob",label:"Dates of birth",on:true},
+    {id:"custom",label:"Words listed below",on:true}
+  ];
+  var MODES = [
+    {id:"solid",label:"Solid black bar",hint:"nothing shown",on:true},
+    {id:"labelled",label:"Black bar with a label",hint:"TFN REDACTED"},
+    {id:"partial",label:"Bar with last three digits",hint:"\u2022\u2022\u2022 789"}
+  ];
+  var NAMES = {tfn:"Tax file number",abn:"ABN",acn:"ACN",bank:"Bank and account details",
+    ref:"Reference number",card:"Card number",medicare:"Medicare number",
+    super:"Super member number",email:"Email address",phone:"Phone number",
+    dob:"Date of birth",custom:"Listed word"};
+  var SHORT = {tfn:"TFN",abn:"ABN",acn:"ACN",bank:"BANK",ref:"REF",card:"CARD",
+    medicare:"MEDICARE",super:"SUPER",email:"EMAIL",phone:"PHONE",dob:"DOB",custom:"NAME"};
+
+  var pdfDoc=null, pageData=[], findings=[], fileName="document";
+  var SCALE = 2;
+
+  TYPES.forEach(function(t){
+    var l=document.createElement("label");
+    l.innerHTML='<input type="checkbox" data-type="'+t.id+'"'+(t.on?" checked":"")+'><span>'+t.label+'</span>';
+    $("types").appendChild(l);
+  });
+  MODES.forEach(function(m){
+    var l=document.createElement("label");
+    l.innerHTML='<input type="radio" name="mode" value="'+m.id+'"'+(m.on?" checked":"")+
+      '><span>'+m.label+' <span class="hint" style="margin:0;display:inline">'+m.hint+'</span></span>';
+    $("modes").appendChild(l);
+  });
+  function typeOn(id){var e=document.querySelector('input[data-type="'+id+'"]');return e&&e.checked;}
+  function mode(){var e=document.querySelector('input[name="mode"]:checked');return e?e.value:"solid";}
+  function loose(){return $("loose").checked;}
+
+  // ---------- checksums ----------
+  function digitsOf(s){return s.replace(/\D/g,"");}
+  function validTFN(d){if(d.length!==9)return false;var w=[1,4,3,7,5,8,6,9,10],s=0;
+    for(var i=0;i<9;i++)s+=parseInt(d[i],10)*w[i];return s%11===0;}
+  function validABN(d){if(d.length!==11)return false;var w=[10,1,3,5,7,9,11,13,15,17,19],s=0;
+    for(var i=0;i<11;i++){var n=parseInt(d[i],10);if(i===0)n-=1;s+=n*w[i];}return s%89===0;}
+  function validACN(d){if(d.length!==9)return false;var w=[8,7,6,5,4,3,2,1],s=0;
+    for(var i=0;i<8;i++)s+=parseInt(d[i],10)*w[i];return ((10-(s%10))%10)===parseInt(d[8],10);}
+  function validMedicare(d){if(d.length!==10&&d.length!==11)return false;var w=[1,3,7,9,1,3,7,9],s=0;
+    for(var i=0;i<8;i++)s+=parseInt(d[i],10)*w[i];return (s%10)===parseInt(d[8],10);}
+  function validLuhn(d){if(d.length<13||d.length>19)return false;var s=0,a=false;
+    for(var i=d.length-1;i>=0;i--){var n=parseInt(d[i],10);if(a){n*=2;if(n>9)n-=9;}s+=n;a=!a;}
+    return s%10===0;}
+
+  // ---------- cues ----------
+  var CUES = {
+    tfn:/\b(tfn|tax file (number|no)?)\b/i,
+    abn:/\b(abn|australian business number)\b/i,
+    acn:/\b(acn|australian company number)\b/i,
+    bank:/\b(bsb|account (number|no|identifier)|acct|account name)\b/i,
+    card:/\b(card|visa|mastercard|amex)\b/i,
+    medicare:/\bmedicare\b/i,
+    super:/\b(super|member (number|no)|usi|fund number)\b/i,
+    ref:/\b(prn|payment reference|eft reference|reference (number|no)?|receipt (number|no)|biller|agent number|client (id|number)|invoice (number|no))\b/i,
+    dob:/\b(dob|date of birth|born|d\.o\.b)\b/i
+  };
+  var BEFORE=80, AFTER=25;
+
+  function cue(text,start,end,ty){
+    var re=CUES[ty]; if(!re) return false;
+    return re.test(text.slice(Math.max(0,start-BEFORE),start)) || re.test(text.slice(end,end+AFTER));
+  }
+  // pick the cue word physically closest to the number, not the first in a fixed list
+  function nearestCue(text,start,end){
+    var best=null,bestD=Infinity;
+    Object.keys(CUES).forEach(function(ty){
+      if(ty==="dob" || !typeOn(ty)) return;
+      var d=Infinity,m;
+      var pre=text.slice(Math.max(0,start-BEFORE),start);
+      var r1=new RegExp(CUES[ty].source,"gi");
+      while((m=r1.exec(pre))!==null) d=Math.min(d, pre.length-(m.index+m[0].length));
+      var post=text.slice(end,end+AFTER);
+      var r2=new RegExp(CUES[ty].source,"gi");
+      while((m=r2.exec(post))!==null) d=Math.min(d, m.index);
+      if(d<bestD){bestD=d;best=ty;}
+    });
+    return bestD===Infinity?null:best;
+  }
+
+  // ---------- detection ----------
+  function detect(text){
+    var found=[];
+    function push(s,e,t,v,sure,dim){found.push({start:s,end:e,type:t,value:v,sure:sure,keep:!dim});}
+    var m;
+
+    if(typeOn("custom")){
+      $("custom").value.split(",").map(function(s){return s.trim();})
+        .filter(function(s){return s.length>1;})
+        .forEach(function(term){
+          var esc=term.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+          var re=new RegExp(esc,"gi");
+          while((m=re.exec(text))!==null){
+            push(m.index,m.index+m[0].length,"custom",m[0],true,false);
+            if(m.index===re.lastIndex) re.lastIndex++;
+          }
+        });
+    }
+    if(typeOn("email")){
+      var r=/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+      while((m=r.exec(text))!==null) push(m.index,m.index+m[0].length,"email",m[0],true,false);
+    }
+    if(typeOn("phone")){
+      var rp=/(\+61[\s-]?[2-9](?:[\s-]?\d){8}|\b0[2-8](?:[\s-]?\d){8}\b|\b04(?:[\s-]?\d){8}\b|\(0[2-8]\)[\s-]?\d{4}[\s-]?\d{4})/g;
+      while((m=rp.exec(text))!==null) push(m.index,m.index+m[0].length,"phone",m[0],true,false);
+    }
+    if(typeOn("bank")){
+      var rb=/\b\d{3}-\d{3}\b/g;               // hyphenated BSB is distinctive
+      while((m=rb.exec(text))!==null) push(m.index,m.index+m[0].length,"bank",m[0],true,false);
+      var rb2=/\b\d{3} \d{3}\b/g;              // spaced form needs a BSB label nearby
+      while((m=rb2.exec(text))!==null){
+        if(/\bbsb\b/i.test(text.slice(Math.max(0,m.index-40),m.index)))
+          push(m.index,m.index+m[0].length,"bank",m[0],true,false);
+      }
+    }
+    if(typeOn("dob")){
+      var rd=/\b\d{1,2}[\/\-.]\d{1,2}[\/\-.](\d{2}|\d{4})\b/g;
+      while((m=rd.exec(text))!==null){
+        if(cue(text,m.index,m.index+m[0].length,"dob")) push(m.index,m.index+m[0].length,"dob",m[0],true,false);
+        else if(loose()) push(m.index,m.index+m[0].length,"dob",m[0],false,true);
+      }
+    }
+
+    // one separator only, so a match cannot run across a gap between table columns
+    var rn=/\d+(?:[ \-]\d+)*/g;
+    while((m=rn.exec(text))!==null){
+      var raw=m[0], start=m.index, end=start+raw.length, d=digitsOf(raw);
+      if(d.length<6||d.length>20) continue;
+      var hit=null;
+      if(typeOn("abn")&&d.length===11&&validABN(d)) hit={t:"abn",s:true};
+      else if(typeOn("tfn")&&d.length===9&&validTFN(d)) hit={t:"tfn",s:true};
+      else if(typeOn("acn")&&d.length===9&&validACN(d)) hit={t:"acn",s:true};
+      else if(typeOn("medicare")&&(d.length===10||d.length===11)&&validMedicare(d)&&cue(text,start,end,"medicare")) hit={t:"medicare",s:true};
+      else if(typeOn("card")&&validLuhn(d)&&d.length>=15) hit={t:"card",s:true};
+
+      if(!hit){
+        var near=nearestCue(text,start,end);
+        if(near) hit={t:near,s:false};
+      }
+      if(!hit && loose() && d.length>=8 && typeOn("ref")) hit={t:"ref",s:false,dim:true};
+      if(hit) push(start,end,hit.t,raw,hit.s,!!hit.dim);
+    }
+
+    found.sort(function(a,b){
+      if(a.start!==b.start) return a.start-b.start;
+      return (b.end-b.start)-(a.end-a.start);
+    });
+    var clean=[],last=-1;
+    found.forEach(function(f){ if(f.start>=last){clean.push(f); last=f.end;} });
+    return clean;
+  }
+
+  // ---------- load ----------
+  function loadFile(f){
+    if(!f) return;
+    if(f.type && f.type.indexOf("pdf")===-1){ say("That is not a PDF. Only PDF files can be loaded here.", true); return; }
+    fileName=f.name.replace(/\.pdf$/i,"");
+    $("outName").value=fileName;
+    $("dropTitle").textContent=f.name;
+    $("dropSub").textContent="Loaded. Choose another to replace it.";
+    say("Reading the PDF...");
+    var r=new FileReader();
+    r.onload=function(){
+      pdfjsLib.getDocument({data:new Uint8Array(r.result)}).promise.then(function(doc){
+        pdfDoc=doc;
+        say(doc.numPages+" page"+(doc.numPages===1?"":"s")+" loaded. Ready to scan.");
+        $("scan").disabled=false;
+      }).catch(function(err){
+        say("That PDF could not be opened. It may be password protected or damaged.", true);
+        console.error(err);
+      });
+    };
+    r.readAsArrayBuffer(f);
+  }
+  $("file").addEventListener("change",function(e){loadFile(e.target.files[0]);});
+  $("drop").addEventListener("keydown",function(e){
+    if(e.key==="Enter"||e.key===" "){e.preventDefault(); $("file").click();}
+  });
+  ["dragenter","dragover"].forEach(function(ev){
+    $("drop").addEventListener(ev,function(e){e.preventDefault(); $("drop").classList.add("over");});
+  });
+  ["dragleave","drop"].forEach(function(ev){
+    $("drop").addEventListener(ev,function(e){e.preventDefault(); $("drop").classList.remove("over");});
+  });
+  $("drop").addEventListener("drop",function(e){ if(e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0]); });
+
+  // ---------- scan ----------
+  $("scan").addEventListener("click",function(){
+    if(!pdfDoc) return;
+    $("scan").disabled=true;
+    pageData=[]; findings=[];
+    say("Scanning...");
+    var chain=Promise.resolve();
+    for(var p=1;p<=pdfDoc.numPages;p++) chain=chain.then(scanPage(p));
+    chain.then(function(){
+      renderFindings();
+      return buildPages();
+    }).then(function(){
+      $("scan").disabled=false;
+      var n=findings.filter(function(f){return f.keep;}).length;
+      say(findings.length
+        ? findings.length+" item"+(findings.length===1?"":"s")+" listed, "+n+" ticked for redaction"
+        : "Nothing matched.");
+      $("exportBlock").hidden = !pageData.length;
+      $("manualHint").hidden = !pageData.length;
+    }).catch(function(err){
+      say("Something went wrong while scanning. See the browser console for detail.", true);
+      $("scan").disabled=false;
+      console.error(err);
+    });
+  });
+
+  function scanPage(num){
+    return function(){
+      return pdfDoc.getPage(num).then(function(page){
+        return page.getTextContent().then(function(tc){
+          var viewport=page.getViewport({scale:SCALE});
+          var v1=page.getViewport({scale:1});
+          var text="",items=[];
+          tc.items.forEach(function(it){
+            if(!it.str) return;
+            var start=text.length;
+            text+=it.str;
+            items.push({start:start,end:text.length,item:it});
+            text+=" ";
+          });
+          detect(text).forEach(function(h){
+            h.page=num;
+            h.boxes=boxesFor(h,items,viewport);
+            h.index=findings.length;
+            if(h.boxes.length) findings.push(h);
+          });
+          pageData.push({num:num,page:page,viewport:viewport,
+            ptW:v1.width, ptH:v1.height,
+            noText:text.trim().length===0, rotated:(page.rotate%360)!==0,
+            manual:[]});
+        });
+      });
+    };
+  }
+
+  function boxesFor(hit,items,viewport){
+    var boxes=[];
+    items.forEach(function(rec){
+      if(rec.end<=hit.start || rec.start>=hit.end) return;
+      var it=rec.item, len=rec.end-rec.start;
+      if(len<=0) return;
+      var from=Math.max(0,hit.start-rec.start);
+      var to=Math.min(len,hit.end-rec.start);
+      var pt=viewport.convertToViewportPoint(it.transform[4],it.transform[5]);
+      var w=(it.width||0)*viewport.scale;
+      var h=(it.height||Math.abs(it.transform[3])||10)*viewport.scale;
+      var x=pt[0]+w*(from/len);
+      var wSel=w*((to-from)/len);
+      var pad=h*0.18;
+      boxes.push({x:x-pad, y:pt[1]-h-pad*0.4, w:wSel+pad*2, h:h+pad});
+    });
+    return boxes;
+  }
+
+  // ---------- findings list ----------
+  function renderFindings(){
+    var res=$("results");
+    if(!findings.length){
+      var hasText=pageData.some(function(p){return !p.noText;});
+      res.innerHTML='<div class="empty" style="padding:22px"><strong>No identifiers found</strong>'+
+        (hasText ? "Either the document is clean, or they are in a format this tool does not recognise. Drag across the page on the right to black out anything by hand."
+                 : "This PDF has no text layer, so it is most likely a scan. Nothing can be detected automatically. Drag across the page on the right to black out anything by hand.")+
+        '</div>';
+      return;
+    }
+    var groups={};
+    findings.forEach(function(f){(groups[f.type]=groups[f.type]||[]).push(f);});
+    var html='<div class="findings">';
+    Object.keys(groups).forEach(function(t){
+      html+='<div class="fgroup"><div class="fhead"><span>'+NAMES[t]+'</span>'+
+        '<span><button type="button" class="tiny ghost" data-all="'+t+'">all</button> '+
+        '<button type="button" class="tiny ghost" data-none="'+t+'">none</button> '+
+        groups[t].length+'</span></div>';
+      groups[t].forEach(function(f){
+        html+='<label class="fitem"><input type="checkbox" data-i="'+f.index+'"'+(f.keep?" checked":"")+'>'+
+          '<code>'+f.value.replace(/&/g,"&amp;").replace(/</g,"&lt;")+'</code>'+
+          '<span class="pg">p'+f.page+'</span>'+
+          '<span class="flag '+(f.sure?"ok":"maybe")+'">'+(f.sure?"confirmed":"check this")+'</span></label>';
+      });
+      html+='</div>';
+    });
+    res.innerHTML=html+'</div>';
+
+    res.querySelectorAll("input[data-i]").forEach(function(cb){
+      cb.addEventListener("change",function(){
+        var f=findings[parseInt(cb.getAttribute("data-i"),10)];
+        f.keep=cb.checked;
+        repaint(f.page);
+        tally();
+      });
+    });
+    res.querySelectorAll("button[data-all],button[data-none]").forEach(function(b){
+      b.addEventListener("click",function(e){
+        e.preventDefault();
+        var t=b.getAttribute("data-all")||b.getAttribute("data-none");
+        var on=!!b.getAttribute("data-all");
+        var touched={};
+        findings.forEach(function(f){ if(f.type===t){ f.keep=on; touched[f.page]=1; } });
+        res.querySelectorAll("input[data-i]").forEach(function(cb){
+          if(findings[parseInt(cb.getAttribute("data-i"),10)].type===t) cb.checked=on;
+        });
+        Object.keys(touched).forEach(function(p){repaint(parseInt(p,10));});
+        tally();
+      });
+    });
+  }
+
+  function tally(){
+    var n=findings.filter(function(f){return f.keep;}).length;
+    var man=pageData.reduce(function(a,p){return a+p.manual.length;},0);
+    say(n+" of "+findings.length+" ticked"+(man?", plus "+man+" added by hand":""));
+  }
+
+  // ---------- page rendering ----------
+  function buildPages(){
+    var wrap=$("preview");
+    wrap.innerHTML='<div class="pages" id="pages"></div>';
+    var host=$("pages");
+    var chain=Promise.resolve();
+    pageData.forEach(function(pd){
+      chain=chain.then(function(){
+        var holder=document.createElement("div");
+        var lbl=document.createElement("div");
+        lbl.className="plabel";
+        lbl.innerHTML="Page "+pd.num+
+          (pd.noText?" \u2014 no text layer, nothing detectable":"")+
+          (pd.rotated?' <span class="rot">\u2014 rotated page, check the bars land correctly</span>':"");
+        holder.appendChild(lbl);
+        var box=document.createElement("div");
+        box.className="page";
+        var canvas=document.createElement("canvas");
+        canvas.width=pd.viewport.width; canvas.height=pd.viewport.height;
+        box.appendChild(canvas);
+        holder.appendChild(box);
+        host.appendChild(holder);
+        pd.canvas=canvas; pd.box=box;
+        wireManual(pd);
+
+        // render once into an offscreen copy, then reuse it for every repaint
+        var base=document.createElement("canvas");
+        base.width=canvas.width; base.height=canvas.height;
+        return pd.page.render({canvasContext:base.getContext("2d"),viewport:pd.viewport}).promise
+          .then(function(){ pd.base=base; repaint(pd.num); });
+      });
+    });
+    return chain;
+  }
+
+  function repaint(pageNum){
+    var pd=pageData.filter(function(p){return p.num===pageNum;})[0];
+    if(!pd||!pd.base) return;
+    var ctx=pd.canvas.getContext("2d");
+    ctx.clearRect(0,0,pd.canvas.width,pd.canvas.height);
+    ctx.drawImage(pd.base,0,0);
+    var m=mode();
+    findings.filter(function(f){return f.page===pageNum&&f.keep;}).forEach(function(f){
+      f.boxes.forEach(function(b,i){
+        ctx.fillStyle="#000";
+        ctx.fillRect(b.x,b.y,b.w,b.h);
+        if(i===0&&m!=="solid"){
+          var txt = m==="labelled" ? SHORT[f.type]+" REDACTED"
+                                   : "\u2022\u2022\u2022 "+(digitsOf(f.value).slice(-3)||"");
+          var size=Math.max(8,b.h*0.6);
+          ctx.fillStyle="#fff";
+          ctx.font=size+"px Calibri, sans-serif";
+          ctx.textBaseline="middle";
+          if(ctx.measureText(txt).width < b.w-4) ctx.fillText(txt,b.x+3,b.y+b.h/2);
+        }
+      });
+    });
+    pd.manual.forEach(function(b){
+      ctx.fillStyle="#000";
+      ctx.fillRect(b.x,b.y,b.w,b.h);
+    });
+  }
+
+  function repaintAll(){ pageData.forEach(function(p){repaint(p.num);}); }
+
+  // ---------- manual boxes ----------
+  function wireManual(pd){
+    var c=pd.canvas, drawing=false, sx=0, sy=0, marq=null;
+    function toCanvas(e){
+      var r=c.getBoundingClientRect();
+      return {x:(e.clientX-r.left)*(c.width/r.width), y:(e.clientY-r.top)*(c.height/r.height)};
+    }
+    c.addEventListener("mousedown",function(e){
+      if(e.button!==0) return;
+      e.preventDefault();
+      drawing=true;
+      var p=toCanvas(e); sx=p.x; sy=p.y;
+      marq=document.createElement("div"); marq.className="marquee";
+      pd.box.appendChild(marq);
+    });
+    window.addEventListener("mousemove",function(e){
+      if(!drawing||!marq) return;
+      var p=toCanvas(e);
+      var r=c.getBoundingClientRect(), k=r.width/c.width;
+      marq.style.left=(Math.min(sx,p.x)*k)+"px";
+      marq.style.top=(Math.min(sy,p.y)*k)+"px";
+      marq.style.width=(Math.abs(p.x-sx)*k)+"px";
+      marq.style.height=(Math.abs(p.y-sy)*k)+"px";
+    });
+    window.addEventListener("mouseup",function(e){
+      if(!drawing) return;
+      drawing=false;
+      if(marq){ marq.remove(); marq=null; }
+      var p=toCanvas(e);
+      var w=Math.abs(p.x-sx), h=Math.abs(p.y-sy);
+      if(w<4||h<4) return;
+      pd.manual.push({x:Math.min(sx,p.x),y:Math.min(sy,p.y),w:w,h:h});
+      repaint(pd.num); tally();
+    });
+    c.addEventListener("contextmenu",function(e){
+      var p=toCanvas(e);
+      for(var i=pd.manual.length-1;i>=0;i--){
+        var b=pd.manual[i];
+        if(p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h){
+          e.preventDefault(); pd.manual.splice(i,1); repaint(pd.num); tally(); return;
+        }
+      }
+    });
+  }
+
+  document.querySelectorAll('input[name="mode"]').forEach(function(r){
+    r.addEventListener("change",function(){ if(pageData.length) repaintAll(); });
+  });
+
+  // ---------- export ----------
+  function outName(){
+    var v=($("outName").value||fileName||"document").trim();
+    v=v.replace(/\.pdf$/i,"").replace(/[\\\/:*?"<>|]/g,"-");
+    return v||"document";
+  }
+
+  $("savePdf").addEventListener("click",function(){
+    if(!pageData.length) return;
+    say("Building the redacted PDF...");
+    var jsPDF=window.jspdf.jsPDF, doc=null;
+    pageData.forEach(function(pd,i){
+      // page size in points from the original, image drawn at higher resolution into it
+      var w=pd.ptW, h=pd.ptH, orient=(w>h)?"l":"p";
+      if(i===0) doc=new jsPDF({orientation:orient,unit:"pt",format:[w,h]});
+      else doc.addPage([w,h],orient);
+      doc.addImage(pd.canvas.toDataURL("image/jpeg",0.92),"JPEG",0,0,w,h);
+    });
+    doc.save(outName()+".pdf");
+    say("Saved as "+outName()+".pdf. Open it and check it before sending.");
+  });
+
+  $("saveTxt").addEventListener("click",function(){
+    function mask(v){
+      var t=v.trim();
+      return t.length<=3 ? "***" : new Array(t.length-2).join("*")+t.slice(-3);
+    }
+    var lines=[];
+    findings.forEach(function(f){
+      if(f.keep) lines.push("Page "+f.page+"  "+NAMES[f.type]+"  ending "+mask(f.value)+(f.sure?"":"  (unconfirmed)"));
+    });
+    pageData.forEach(function(p){
+      if(p.manual.length) lines.push("Page "+p.num+"  "+p.manual.length+" area"+(p.manual.length===1?"":"s")+" blacked out by hand");
+    });
+    var body="Redaction log for "+outName()+".pdf\nPrepared "+new Date().toLocaleString("en-AU")+
+      "\n\n"+(lines.length?lines.join("\n"):"Nothing redacted.")+
+      "\n\nValues are masked in this log on purpose. Only the last three characters are shown, "+
+      "so the log can be filed without recreating the risk the redaction was meant to remove.";
+    var blob=new Blob([body],{type:"text/plain;charset=utf-8"});
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download=outName()+"-redaction-log.txt";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  });
+
+  $("reset").addEventListener("click",function(){
+    pdfDoc=null; pageData=[]; findings=[]; fileName="document";
+    $("file").value=""; $("custom").value=""; $("outName").value="";
+    $("dropTitle").textContent="Choose a PDF";
+    $("dropSub").textContent="or drag one here";
+    $("scan").disabled=true;
+    $("exportBlock").hidden=true;
+    $("manualHint").hidden=true;
+    $("results").innerHTML='<div class="empty" style="padding:22px"><strong>Nothing scanned yet</strong>Load a PDF and select Scan document.</div>';
+    $("preview").innerHTML='<div class="empty"><strong>No document loaded</strong>Pages appear here with the redactions marked, so you can check them before saving.</div>';
+    say("");
+  });
+})();
+</script>
+</body>
+</html>
